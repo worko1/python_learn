@@ -1,0 +1,19 @@
+interface GigabitEthernet0/1
+ description {{ descript }}
+ no switchport
+ ip address {{ ip_addr }} {{ netmask }}
+ speed auto
+ duplex auto
+!
+{%- if vlan1 == True %}  {# the MINUS sign in %- does not leave a blank line in #}
+interface Vlan1          {# the final output #}
+ description **TEST VLAN1**
+ ip address {{ vlan1_ip }} {{ vlan1_mask }}
+ {%- if vlan1_v6 == True %}  {# nested IF #}
+ ipv6 address {{ vlan1_v6_ip }}
+ {%- endif %}
+{%- elif vlan1 == False%}
+interface Vlan1
+ description **DHCP VLAN**
+ ip address dhcp
+{%- endif %}

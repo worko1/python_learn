@@ -1,0 +1,6 @@
+{% set new_mask = '/24' %}
+interface gigabit0/1
+ description LAN connection
+ ip address {{ ip_addr }}{{ new_mask }}
+ duplex auto
+ speed auto

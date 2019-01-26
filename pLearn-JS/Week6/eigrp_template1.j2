@@ -1,0 +1,18 @@
+router eigrp 1
+ !
+ address-family ipv4 vrf CORP 
+  network 10.115.79.49 0.0.0.0
+  network 10.115.79.170 0.0.0.0
+  network 10.115.79.174 0.0.0.0
+  !
+  network 10.115.68.0 0.0.0.255
+  network 10.115.78.0 0.0.0.255
+  passive-interface default
+  no passive-interface Vlan920
+  no passive-interface Vlan921
+  autonomous-system 1
+  eigrp router-id 10.115.79.49
+  eigrp stub connected summary
+  nsf
+ exit-address-family
+ !

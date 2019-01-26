@@ -1,0 +1,11 @@
+{%- for module, module_vars in modules.items() %}
+{# {%- for port_number in range(1, 49) %}  .. this is being omitted due to more complex dict alternative #}
+{%- for port_number in module_vars.ports %}
+interface GigabitEthernet{{ module }}/{{ port_number }}
+ switchport mode access
+ switchport access vlan {{ module_vars.vlan_id }}
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+!
+{%- endfor %}
+{%- endfor %}

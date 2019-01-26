@@ -1,0 +1,7 @@
+{%- for port_number in range(1, 49) %}
+interface GigabitEthernet0/{{ port_number }}
+ switchport mode access
+ switchport access vlan {{ vlan_id }}
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+{%- endfor %}

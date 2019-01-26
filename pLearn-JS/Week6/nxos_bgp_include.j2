@@ -1,0 +1,9 @@
+ture bgp
+router bgp {{ local_as }}
+ {% include 'bgp_ipv4_routes.j2' %}  {# appends a separate FILE's content on this place #}
+ neighbor {{ peer1_ip }} remote-as {{ peer1_as }}
+   update-source loop1
+   ebgp-multihop 2
+   address-family ipv4 unicast
+!
+{% include eigrp_template %}   {# eigrp_template is a VARIABLE defined in the dictionary #}
