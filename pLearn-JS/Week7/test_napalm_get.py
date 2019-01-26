@@ -28,7 +28,8 @@ test_methods = [
 my_password = 'admin'
 
 cisco_sw = dict(  # Create a dictionary containing switche's information
-    hostname='10.229.16.145',
+    #hostname='10.229.16.145',
+    hostname='192.168.219.1',
     device_type='ios',  # uses Netmiko, or basically SSH under the hood
     username='admin',
     password=my_password,
@@ -58,7 +59,7 @@ for a_device in devices:
         banner_for = " Method - {}" .format(my_methods)
         print(banner_for.center(80, '-'))
         output_method = "device." + my_methods + '()'
-        pprint(eval(output_method))
+        pprint(eval(output_method))  # the EVAL method is necessary to format the call in the correct shape to the pprint method
         raw_input("Hit ENTER to continue: ")
     print('-' * 80)
     print()
