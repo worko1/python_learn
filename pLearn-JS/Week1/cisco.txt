@@ -1,0 +1,494 @@
+!
+!
+service password-encryption
+!
+hostname HALNS-7107-TL-SW01
+!
+!
+!
+!
+shell trigger AP Wireless AP
+shell trigger CCTV CCTV Camera
+shell trigger CLOCK CLOCK
+shell trigger CORP-PC Coorporate Pc
+shell trigger DECT-AP Dect Radio AP
+shell trigger DOOR DOOR
+shell trigger ICAFE-CREW ICAFE-CREW
+shell trigger ICAFE-PAX ICAFE-PAX
+shell trigger PAX-AP Wireless PAX AP with Miniswitch
+shell trigger QUARANTINE QUARANTINE
+shell trigger PHONE-CISCO PHONE-CISCO
+shell trigger PHONE-NONCISCO PHONE-NONCISCO
+shell trigger PRINTER PRINTER
+shell trigger TV TV
+!
+!
+!
+logging buffered 500000
+no logging console
+logging monitor informational
+!
+auto qos srnd4
+!
+enable secret 0 Venice18
+!
+username admin privilege 15 secret 0 Venice18
+username haladmin privilege 15 secret 5 $1$yolE$r2g7g4QSe4Ons1a1owrcz0
+!
+!
+!
+!
+aaa new-model
+!
+radius-server attribute 6 on-for-login-auth
+radius-server attribute 8 include-in-access-req
+radius-server attribute 25 access-request include
+radius-server dead-criteria time 5 tries 3
+radius-server deadtime 1
+!
+radius server AAA-RADIUS_ISE-1
+ address ipv4 10.115.67.205 auth-port 1645 acct-port 1646
+ key 0 aaa4ise@HAL
+!
+radius server AAA-RADIUS_ISE-2
+ address ipv4 10.115.67.206 auth-port 1645 acct-port 1646
+ key 0 aaa4ise@HAL
+!
+!
+tacacs-server directed-request
+tacacs server dce-ii15-cp180
+ address ipv4 192.168.246.180
+ key 7 052B4C1C6B4D1E4D5F4829535946427D7E
+tacacs server dce-ii16-cp181
+ address ipv4 192.168.246.181
+ key 7 002459154E5A5B42496C720F5B53434047
+tacacs server dcc-p22-cp-10
+ address ipv4 192.168.99.180
+ key 7 096C041A530447564D413A6B796E6E6460
+tacacs server dcc-p22-cp-11
+ address ipv4 10.56.14.180
+ key 7 112953165D135B48426715657A79737546
+!
+!
+aaa group server tacacs+ AAA-TACACS-Mgmt
+ server name dce-ii15-cp180
+ server name dce-ii16-cp181
+ server name dcc-p22-cp-10
+ server name dcc-p22-cp-11
+ ip tacacs source-interface Vlan801
+!
+!
+aaa group server radius AAA-RADIUS-Dot1x
+ server name AAA-RADIUS_ISE-1
+ server name AAA-RADIUS_ISE-2
+ ip radius source-interface Vlan801
+ load-balance method least-outstanding
+!
+aaa authentication banner ~
+>>> TACACS-Server NOT RESPONDING !!! <<<
+~
+!
+!
+! AAA AUTHENTICATION
+aaa authentication login default local
+aaa authentication login TACACS-AUTHENT group AAA-TACACS-Mgmt local
+aaa authentication login LOCAL-AUTHENT local
+aaa authentication login NO-AUTHENT none
+aaa authentication login HALNS-ISE-AUTHENT group AAA-RADIUS-Dot1x local enable
+aaa authentication enable default enable
+aaa authentication dot1x default group AAA-RADIUS-Dot1x
+!
+! AAA AUTHORIZATION
+aaa authorization console
+aaa authorization exec default group AAA-TACACS-Mgmt local
+aaa authorization exec NO-AUTHOR none
+aaa authorization commands 15 default group AAA-TACACS-Mgmt local if-authenticated 
+aaa authorization commands 15 NO-AUTHOR none
+aaa authorization network default group AAA-RADIUS-Dot1x
+!
+! AAA ACCOUNTING (not configured during staging!!)
+!aaa accounting dot1x default start-stop group AAA-TACACS-Mgmt
+!aaa accounting exec default start-stop group AAA-TACACS-Mgmt
+!
+!
+!
+aaa session-id common
+!
+!
+!
+no ip source-route
+ip arp proxy disable
+!
+ip name-server 10.115.64.21
+ip name-server 10.115.64.22
+!
+!no ip domain lookup
+ip domain name nsdmdomain.hal.com
+!
+login on-failure log
+login on-success log
+!
+vtp domain HALNS
+vtp mode off
+udld aggressive
+!
+dot1x system-auth-control
+!
+!
+errdisable recovery cause udld
+errdisable recovery cause bpduguard
+errdisable recovery cause security-violation
+errdisable recovery cause channel-misconfig
+errdisable recovery cause pagp-flap
+errdisable recovery cause dtp-flap
+errdisable recovery cause link-flap
+errdisable recovery cause gbic-invalid
+errdisable recovery cause l2ptguard
+errdisable recovery cause psecure-violation
+errdisable recovery cause dhcp-rate-limit
+errdisable recovery cause mac-limit
+errdisable recovery cause vmps
+errdisable recovery cause storm-control
+errdisable recovery cause arp-inspection
+errdisable recovery cause loopback
+errdisable recovery interval 180
+!
+!
+spanning-tree mode rapid-pvst
+spanning-tree loopguard default
+spanning-tree portfast edge bpduguard default
+spanning-tree extend system-id
+spanning-tree vlan 1-4094 priority 53248
+!
+!
+!
+!
+!
+!
+vlan 501
+ name P:R:IPTV:10.25.32.0/21:iptv
+!
+vlan 701
+ name P:R:VOIP:10.27.32.0/22:cisco
+!
+vlan 711
+ name P:R:VOIP:10.27.36.0/22:non-cisco
+!
+vlan 801
+ name P:R:CORP:10.28.32.0/21:tl-mgmt
+!
+vlan 802
+ name P:R:CORP:10.28.96.0/21:ap-mgmt
+!
+vlan 803
+ name P:R:VOIP:10.28.160.0/21:dect
+!
+vlan 870
+ name P:R:ISE:10.23.196.0/24:quarant
+!
+vlan 1401
+ ! The range stays the same for every FZ. Not allowed on uplink to FZ-DIST !!!
+ name P:U:tech:10.24.128.0/22:clocks
+!
+!
+ip igmp snooping
+ip igmp snooping vlan 501
+!
+lldp run
+!
+macro auto execute AP remote tftp://10.115.67.241/smartports/mcr-cisco-wap.cfg
+macro auto execute CCTV remote tftp://10.115.67.241/smartports/mcr-cctv.cfg
+macro auto execute CLOCK remote tftp://10.115.67.241/smartports/mcr-clock.cfg
+macro auto execute CORP-PC remote tftp://10.115.67.241/smartports/mcr-corp-pc.cfg
+macro auto execute DECT-AP remote tftp://10.115.67.241/smartports/mcr-dect-ap.cfg
+macro auto execute DOOR remote tftp://10.115.67.241/smartports/mcr-doorlock.cfg
+macro auto execute ICAFE-CREW remote tftp://10.115.67.241/smartports/mcr-icafe-crew.cfg
+macro auto execute ICAFE-PAX remote tftp://10.115.67.241/smartports/mcr-icafe-pax.cfg
+macro auto execute PHONE-CISCO remote tftp://10.115.67.241/smartports/mcr-cisco-phone.cfg
+macro auto execute PHONE-NONCISCO remote tftp://10.115.67.241/smartports/mcr-noncisco-phone.cfg
+macro auto execute PRINTER remote tftp://10.115.67.241/smartports/mcr-printer.cfg
+macro auto execute QUARANTINE remote tftp://10.115.67.241/smartports/mcr-quarantine.cfg
+macro auto execute TV remote tftp://10.115.67.241/smartports/mcr-tv.cfg
+macro auto global processing
+no macro auto global control device
+!
+!
+!
+interface Port-channel1
+ description HALNS-FZ3D07-ACC-SW02:Po25
+ switchport trunk allowed vlan 501,701,711,801,802,803,870,1401
+ switchport mode trunk
+ switchport nonegotiate
+ ip arp inspection trust
+ no macro auto processing
+ storm-control broadcast level 20.00
+ ip dhcp snooping trust
+!
+!
+!
+!
+interface Gi0/9
+ description HALNS-FZ3D07-ACC-SW02,Gi2/0/29
+ switchport trunk allowed vlan 501,701,711,801,802,803,870,1401
+ switchport mode trunk
+ switchport nonegotiate
+ ip arp inspection trust
+ no macro auto processing
+ storm-control broadcast level 20.00
+ ip dhcp snooping trust
+ channel-group 1 mode active
+!
+interface Gi0/10
+ description HALNS-FZ3D07-ACC-SW02,Gi1/0/29
+ switchport trunk allowed vlan 501,701,711,801,802,803,870,1401
+ switchport mode trunk
+ switchport nonegotiate
+ ip arp inspection trust
+ no macro auto processing
+ storm-control broadcast level 20.00
+ ip dhcp snooping trust
+ channel-group 1 mode active
+!
+!
+! STATIC PORTS Gi0/1 + Gi0/2 for always-on VoIP cabin telephones
+!
+interface Gi0/1
+ description PHONE-NON-Cisco-STATIC
+ switchport access vlan 711
+ switchport mode access
+ switchport nonegotiate
+ power inline consumption 7400
+ power inline static max 7400
+ mls qos trust cos
+ no macro auto processing
+ auto qos voip trust 
+ storm-control broadcast level 20.00
+ spanning-tree portfast edge
+!
+interface Gi0/2
+ description PHONE-NON-Cisco-STATIC
+ switchport access vlan 711
+ switchport mode access
+ switchport nonegotiate
+ power inline consumption 7400
+ power inline static max 7400
+ mls qos trust cos
+ no macro auto processing
+ auto qos voip trust
+ storm-control broadcast level 20.00
+ spanning-tree portfast edge
+!
+!
+! STATIC PORTS Gi0/3 + Gi0/4 for static configuration of APs
+!
+interface Gi0/3
+ description PAX-AP-STATIC
+ switchport trunk allowed vlan 501,701,802
+ switchport trunk native vlan 802
+ switchport mode trunk
+ switchport nonegotiate
+ ip access-group blocked-samsung-traffic in
+ ip arp inspection trust
+ no macro auto processing
+ auto qos trust dscp 
+ storm-control broadcast level 20.00
+ spanning-tree portfast edge
+ ip dhcp snooping trust
+!
+interface Gi0/4
+ description PAX-AP-STATIC
+ switchport trunk allowed vlan 501,701,802
+ switchport trunk native vlan 802
+ switchport mode trunk
+ switchport nonegotiate
+ ip access-group blocked-samsung-traffic in
+ ip arp inspection trust
+ no macro auto processing
+ auto qos trust dscp 
+ storm-control broadcast level 20.00
+ spanning-tree portfast edge
+ ip dhcp snooping trust
+!
+! STATIC PORTS Gi0/5 + Gi0/6 for standard VoIP cabin telephones
+!
+interface Gi0/5
+ description PHONE-NON-Cisco-STATIC
+ switchport access vlan 711
+ switchport mode access
+ switchport nonegotiate
+ power inline auto
+ mls qos trust cos
+ no macro auto processing
+ auto qos voip trust 
+ storm-control broadcast level 20.00
+ spanning-tree portfast edge
+!
+interface Gi0/6
+ description PHONE-NON-Cisco-STATIC
+ switchport access vlan 711
+ switchport mode access
+ switchport nonegotiate
+ power inline auto
+ mls qos trust cos
+ no macro auto processing
+ auto qos voip trust 
+ storm-control broadcast level 20.00
+ spanning-tree portfast edge
+!
+! STATIC PORTS Gi0/7 + Gi0/8 for clocks
+!
+interface Gi0/7
+ description Clocks
+ switchport access vlan 1401
+ switchport mode access
+ switchport nonegotiate
+ power inline auto
+ no macro auto processing
+ auto qos trust dscp
+ storm-control broadcast level 20.00
+ spanning-tree portfast edge
+!
+interface Gi0/8
+ description Clocks
+ switchport access vlan 1401
+ switchport mode access
+ switchport nonegotiate
+ power inline auto
+ no macro auto processing
+ auto qos trust dscp
+ storm-control broadcast level 20.00
+ spanning-tree portfast edge
+!
+!
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+interface Vlan2
+ no ip address
+ shutdown
+!
+interface Vlan801
+ ip address 10.28.16.111 255.255.248.0
+ no ip redirects
+ no ip proxy-arp
+!
+ip default-gateway 10.28.16.1
+!
+no ip http server
+!
+no ip http secure-server
+!
+ip ftp source-interface Vlan801
+ip tftp source-interface Vlan801
+ip ssh source-interface Vlan801
+ip ssh version 2
+!
+ip access-list standard ACL-SNMP-PI-RW
+ permit 10.115.67.211
+ permit 10.115.67.201
+ip access-list standard ACL-SNMP-RO
+ permit any
+!
+ip access-list extended blocked-samsung-traffic
+ deny tcp any 10.25.0.0 0.0.255.255 eq 7676
+ deny udp any 10.25.0.0 0.0.255.255 eq 10001
+ deny ip any host 239.255.255.250
+ deny ip any host 239.255.255.246
+ permit tcp any any
+ permit udp any any
+ permit ip any any
+!
+!
+!
+snmp-server community com4snmp@NSDM RO ACL-SNMP-RO
+snmp-server community pi4snmp@NSDM RW ACL-SNMP-PI-RW
+snmp-server contact LHIND BU Hospitality support@lhind.dlh.de
+snmp-server enable traps bridge newroot topologychange
+snmp-server enable traps stpx root-inconsistency
+!
+!
+!
+rmon event 1 log trap public description FATAL(1) owner PMON@FATAL
+rmon event 2 log trap public description CRITICAL(2) owner PMON@CRITICAL
+rmon event 3 log trap public description ERROR(3) owner PMON@ERROR
+rmon event 4 log trap public description WARNING(4) owner PMON@WARNING
+rmon event 5 log trap public description INFORMATION(5) owner PMON@INFO
+!
+no vstack
+!
+!
+banner exec ~
+You have logged onto $(hostname), please remember to save any changes
+to memory and to the tftp server!!!
+~
+banner login ~
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Holland America Line <<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+   This is a Carnival Corporation Computing Network and is for the official
+   use by authorized employees only. Use of this system is governed by the
+   provisions in the acceptable usage policy and applicable Federal and State
+   Laws on Computer Crimes. Access to this system requires use of your
+   individually assigned UserID and Password. Use of any UserID other than
+   your assigned UserID constitutes a security violation and is subject to
+   disciplinary action or prosecution.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Holland America Line <<<<<<<<<<<<<<<<<<<<<<<<<<<<
+~
+banner motd ~
+HAL Nieuw Statendam - 2018
+~
+!
+alias exec idf sh run int vlan 801 | i address
+alias exec shd show ip dhcp snooping binding
+alias exec loc sh location admin-tag
+alias exec half sh int status | i half
+alias exec qua sh mac add vlan 870 | i Gi
+alias exec wrnet copy running-config tftp://10.115.67.241/config-backup/HALNS-7107-TL-SW01.txt
+!
+!
+!
+line con 0
+ session-timeout 60 
+ exec-timeout 60 0
+ privilege level 15
+ authorization commands 15 NO-AUTHOR
+ authorization exec NO-AUTHOR
+ logging synchronous
+ login authentication LOCAL-AUTHENT
+ transport preferred none
+ stopbits 1
+!
+line vty 0 4
+ session-timeout 60 
+ exec-timeout 60 0
+ privilege level 15
+ authorization commands 15 NO-AUTHOR
+ authorization exec NO-AUTHOR
+ logging synchronous
+ login authentication HALNS-ISE-AUTHENT
+ transport preferred none
+ transport input ssh
+!
+line vty 5 15
+ session-timeout 60 
+ exec-timeout 60 0
+ privilege level 15
+ authorization commands 15 NO-AUTHOR
+ authorization exec NO-AUTHOR
+ logging synchronous
+ login authentication HALNS-ISE-AUTHENT
+ transport preferred none
+ transport input ssh
+!
+!
+!
+ntp server 10.115.79.253 prefer source vlan 801
+ntp server 10.115.79.254 source vlan 801
+ntp source vlan 801
+!
+!
+crypto key generate rsa usage-keys modulus 2048
+!
+end
